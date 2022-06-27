@@ -11,7 +11,7 @@ features still need to be added and the API may change at any time.
 Zonaltools works something like this:
 
 
-```
+```python
 from zonaltools import Calculator, zonal_property
 
 # Define the calculator
