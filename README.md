@@ -17,13 +17,13 @@ from zonaltools import Calculator, zonal_property
 # Define the calculator
 class MyCalculator(Calculator):
 
-	# Anything decorated with zonal_property will be calculated for each zone
-	# that is loaded into the calculator.
+    # Anything decorated with zonal_property will be calculated for each zone
+    # that is loaded into the calculator.
     @zonal_property
     def forest_area(self):
-    	"""
-    	Calculate the forested area from the land use data source.
-    	"""
+        """
+        Calculate the forested area from the land use data source.
+        """
         return ((self.landuse == 10) * self.area).sum()
 
 # Initialize the calculator
