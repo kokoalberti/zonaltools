@@ -43,9 +43,9 @@ class Source(object):
     def __repr__(self):
         return f"<Source name='{self.name}'>"
 
-    pass
 
 class Zone(object):
+
     def __init__(self, name=None, extras={}, identifier=None, wkt=None, feat=None, srs=None, geom_type=None, reference=None):
         self.name = name
         self.identifier = identifier
@@ -72,6 +72,13 @@ class Zone(object):
     def __repr__(self):
         return f"<Zone name='{self.name}' identifier='{self.identifier}'>"
 
+    @property
+    def _export_directory(self):
+        export_directory = "./exports/{}/".format(self.identifier)
+        try: os.makedirs(export_directory)
+        except: pass
+        return export_directory
+
     def export(self, fieldnames=[]):
         export = OrderedDict()
         for fieldname in fieldnames:
@@ -85,7 +92,6 @@ class Zone(object):
         for item in self.custom_exports:
             export[item] = self.custom_exports[item]
 
-
         return export
 
     def export_property(self, name, value):
@@ -96,6 +102,10 @@ class Zone(object):
     def export_array(self, array, filename):
         logging.debug("Exporting array as GTiff...")
         logging.debug(array.dtype)
+
+        if not filename.endswith(".tif"):
+            raise ValueError("Only GeoTIFF exports supported at this time.")
+
         if array.shape != self.mask.shape:
             raise ValueError("You can only export arrays with the same shape as the mask.")
 
@@ -117,11 +127,7 @@ class Zone(object):
 
         logging.debug("Creating GTiff with GDAL datatype: {}".format(gdal_datatype))
 
-        export_directory = "./exports/{}/".format(self.identifier)
-        try: os.makedirs(export_directory)
-        except: pass
-
-        export_path = os.path.join(export_directory, filename)
+        export_path = os.path.join(self._export_directory, filename)
 
         export_ds = gtiff.Create(export_path, xsize=array.shape[1], ysize=array.shape[0], bands=1, eType=gdal_datatype, options=['TILED=YES', 'COMPRESS=DEFLATE', 'ZLEVEL=2'])
         export_ds.SetGeoTransform(self.mask_geotransform)
@@ -130,7 +136,7 @@ class Zone(object):
         export_ds = None
 
         logging.debug("Done exporting!")
-        pass
+
 
     def memfile(self, filename=None):
         if not filename:
