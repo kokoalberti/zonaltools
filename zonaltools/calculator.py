@@ -440,8 +440,6 @@ class Calculator(object):
         """
         self._active_zone.export_array(array, filename)
 
-
-
     def _calculate_zone(self, zone):
         logging.debug("------------")
         logging.debug("Calculating data for a zone: {}".format(zone))
@@ -455,18 +453,32 @@ class Calculator(object):
 
         for attribute in self._attributes:
             result = getattr(self, attribute)
+
+            # If the attribute is actually callable, call it to fetch the 
+            # results that it yielded. It must yield dicts, each of which 
+            # updates the result dictionary.
+            if callable(result):
+                result_dict = {}
+                for item in result():
+                    if isinstance(item, dict):
+                        result_dict.update(item)
+                # Overwrite the original result variable
+                result = result_dict
+
             dim = np.ndim(result)
             # Update the results dict for this attribute. Set to None in case
             # the dimension of the returned result is not 0, since those are 
             # most likely to be intermediary properties used to calculate other
             # values.
             if dim == 0:
+                logging.debug("Dimension of result is 0!")
                 # Anytime a value is returned with dimension 0 we add the name 
                 # of that attribute to the "exportable_attributes" set so we 
                 # know which attributes to export at the end of the run.
                 self._exportable_attributes.add(attribute)
                 self._active_zone.results.update({attribute: result})
             else:
+                logging.debug("Dimension of result is not zero.")
                 self._active_zone.results.update({attribute: None})
 
         logging.debug("Results for this zone:")
@@ -478,6 +490,7 @@ class Calculator(object):
         # Clear the cache on the zone we've just completed.
         self._active_zone.cleanup()
         logging.debug("------------")
+        
         return True
 
     def calculate(self):
