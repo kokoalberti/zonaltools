@@ -27,7 +27,7 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         if isinstance(obj, np.bool_):
             return bool(obj)
-        return super(NpEncoder, self).default(obj)
+        return super(NumpyEncoder, self).default(obj)
 
 class Source(object):
 
@@ -403,12 +403,28 @@ class Calculator(object):
             # Only the first layer for now.
             break
 
-    def export(self, filename, attributes=None, options={}, exclude=[]):
-        if not filename.endswith('.csv') and not filename.endswith('.json'):
+    def export(self, filename=None, attributes=None, options={}, exclude=[]):
+
+        if (filename and not filename.endswith('.csv')) and (filename and not filename.endswith('.json')):
             raise ValueError("Only CSV and JSON export currently supported.")
 
         logging.debug("Exporting results to file: {}".format(filename))
         logging.debug("Exportable attributes: {}".format(self._exportable_attributes))
+
+        if filename == None:
+            # Export as jsonable dict
+            json_export = []
+            fieldnames = ('identifier', 'name') + tuple(sorted(self._exportable_attributes))
+            logging.debug("Exporting fieldnames: {}".format(fieldnames))
+            for zone in self._zones:
+                if zone.results or zone.custom_exports:
+                    result = zone.export(fieldnames=fieldnames)
+                    logging.debug("Result: {}".format(result))
+                    json_export.append(result)
+
+            # Return a encoded/decoded json to ensure that the serialization worked ok
+            return json.loads(json.dumps(json_export, ensure_ascii=False, cls=NumpyEncoder).encode('utf-8'))
+
 
         if filename.endswith('.csv'):
             with open(filename, mode='w') as csv_file:
@@ -419,6 +435,8 @@ class Calculator(object):
                     if zone.results or zone.custom_exports:
                         logging.debug("Writing results for zone {}".format(zone))
                         writer.writerow(zone.export(fieldnames=fieldnames))
+
+            return True
 
         if filename.endswith('.json'):
             json_export = []
@@ -431,6 +449,8 @@ class Calculator(object):
                         logging.debug("Result: {}".format(result))
                         json_export.append(result)
                 json_file.write(json.dumps(json_export, ensure_ascii=False, cls=NumpyEncoder).encode('utf-8'))
+
+            return True
 
         logging.debug("Done!")
 
@@ -462,6 +482,7 @@ class Calculator(object):
                 for item in result():
                     if isinstance(item, dict):
                         result_dict.update(item)
+
                 # Overwrite the original result variable
                 result = result_dict
 
