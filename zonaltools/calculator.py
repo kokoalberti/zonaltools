@@ -309,7 +309,7 @@ class Calculator(object):
     # Define a list of public function names. When obtaining a list of user-
     # defined functions to calculate per zone we need this to easily identify
     # which are custom added, and which methods are part of the regular API.
-    _public_function_names = ("calculate", "export", "add_zones", "add_source", "mask", "area", "lats", "lons", "export_array", "export_property", "before", "after")
+    _public_function_names = ("calculate", "configure", "config", "export", "add_zones", "add_source", "mask", "area", "lats", "lons", "export_array", "export_property", "before", "after")
 
     def __init__(self, debug=False):
         logging.debug("Initializing the calculator...")
@@ -321,6 +321,7 @@ class Calculator(object):
         self._exportable_attributes = set()
         self._debug = debug
         self._custom_properties = dict()
+        self._config = dict()
 
 
         # Stores the zone that we're actively doing calculations on.
@@ -333,6 +334,14 @@ class Calculator(object):
 
     def after(self):
         pass
+
+    @property
+    def config(self):
+        return self._config
+
+    def configure(self, **kwargs):
+        for key, value in kwargs.items():
+            self._config[key] = value
 
     def export_property(self, name, value):
         """
